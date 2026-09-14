@@ -1,6 +1,6 @@
 name: Build Pulsar Android APK
 
-# Source bundle revision: 3 (verified split archive)
+# Source bundle revision: 4 (verified exact source shards)
 on:
   push:
     branches: [ main ]
@@ -34,7 +34,12 @@ jobs:
             .source/pulsar.part00b \
             .source/pulsar.part01 \
             .source/pulsar.part02a \
-            .source/pulsar.part02b \
+            .source/pulsar.part02c \
+            .source/pulsar.part02e0 \
+            .source/pulsar.part02e1 \
+            .source/pulsar.part02e2 \
+            .source/pulsar.part02e3 \
+            .source/pulsar.part02e4 \
             .source/pulsar.part03 \
             .source/pulsar.part04 > pulsar-source.b64
           base64 --decode pulsar-source.b64 > pulsar-source.zip
