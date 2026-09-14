@@ -1,0 +1,20 @@
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+
+# Secrets / local overrides
+secrets.properties
+keystore.properties
+*.jks
+*.keystore
+
+# OS
+.DS_Store
+Thumbs.db
