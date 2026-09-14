@@ -1,5 +1,6 @@
 name: Build Pulsar Android APK
 
+# Source bundle revision: 2 (exact split archive)
 on:
   push:
     branches: [ main ]
