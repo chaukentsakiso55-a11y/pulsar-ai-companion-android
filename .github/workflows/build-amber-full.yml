@@ -33,9 +33,9 @@ jobs:
           gzip -dc amber-full.patch.gz > amber-full.patch
           echo "ca8bc6349dd77451900636992897a727c2ba4b32d5167896b80c29fbb9aace8c  amber-full.patch" | sha256sum -c -
           patch -p0 < amber-full.patch
-          test -f AMBER-Android-Full/app/build.gradle
-          grep -q "versionName '2.0.0-full'" AMBER-Android-Full/app/build.gradle
-          test "$(find AMBER-Android-Full/app/src/main/java -name '*.java' | wc -l)" -ge 38
+          test -f AMBER-Android/app/build.gradle
+          grep -q "versionName '2.0.0-full'" AMBER-Android/app/build.gradle
+          test "$(find AMBER-Android/app/src/main/java -name '*.java' | wc -l)" -ge 38
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -65,13 +65,13 @@ jobs:
           gradle-version: '8.11.1'
 
       - name: Build AMBER Full debug APK
-        working-directory: AMBER-Android-Full
+        working-directory: AMBER-Android
         run: gradle --no-daemon :app:assembleDebug --stacktrace
 
       - name: Verify APK
         shell: bash
         run: |
-          APK="AMBER-Android-Full/app/build/outputs/apk/debug/app-debug.apk"
+          APK="AMBER-Android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           unzip -t "$APK" >/dev/null
           aapt dump badging "$APK" | head -5
@@ -82,5 +82,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AMBER-Full-debug-apk
-          path: AMBER-Android-Full/app/build/outputs/apk/debug/app-debug.apk
+          path: AMBER-Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
