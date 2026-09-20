@@ -1,1 +1,0 @@
-# pulsar-ai-companion-android

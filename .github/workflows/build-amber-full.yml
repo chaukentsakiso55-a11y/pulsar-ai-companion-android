@@ -1,0 +1,86 @@
+name: Build AMBER Full APK
+
+on:
+  push:
+    branches:
+      - amber-apk-build-20260920
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct AMBER core
+        shell: bash
+        run: |
+          cat source/core-* > amber-core.b64
+          base64 -d amber-core.b64 > AMBER-Android-BuildSrc.zip
+          unzip -q AMBER-Android-BuildSrc.zip
+          test -f AMBER-Android/app/build.gradle
+
+      - name: Reconstruct and verify full upgrade
+        shell: bash
+        run: |
+          cat patch/chunk-* > amber-full.patch.b64
+          echo "44c7d2d8de6325453ff9081db29b68f1888c3bf3c877914b7ba8201e67a748dd  amber-full.patch.b64" | sha256sum -c -
+          base64 -d amber-full.patch.b64 > amber-full.patch.gz
+          echo "7e3ccd82b3aa0793b5c4ca26d3f6eab2fc4f4f1e020dcc8a5d8f206e7a76cc44  amber-full.patch.gz" | sha256sum -c -
+          gzip -dc amber-full.patch.gz > amber-full.patch
+          echo "ca8bc6349dd77451900636992897a727c2ba4b32d5167896b80c29fbb9aace8c  amber-full.patch" | sha256sum -c -
+          patch -p0 < amber-full.patch
+          test -f AMBER-Android-Full/app/build.gradle
+          grep -q "versionName '2.0.0-full'" AMBER-Android-Full/app/build.gradle
+          test "$(find AMBER-Android-Full/app/src/main/java -name '*.java' | wc -l)" -ge 38
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android SDK 35
+        shell: bash
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.1"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/build-tools/35.0.1" >> "$GITHUB_PATH"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build AMBER Full debug APK
+        working-directory: AMBER-Android-Full
+        run: gradle --no-daemon :app:assembleDebug --stacktrace
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          APK="AMBER-Android-Full/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK" >/dev/null
+          aapt dump badging "$APK" | head -5
+          apksigner verify --verbose "$APK"
+          sha256sum "$APK"
+
+      - name: Upload AMBER Full APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMBER-Full-debug-apk
+          path: AMBER-Android-Full/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
