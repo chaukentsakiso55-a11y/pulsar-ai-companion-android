@@ -37,11 +37,11 @@ jobs:
           grep -q "versionName '2.0.0-full'" AMBER-Android/app/build.gradle
           test "$(find AMBER-Android/app/src/main/java -name '*.java' | wc -l)" -ge 38
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: Prepare Android SDK 35
         shell: bash
