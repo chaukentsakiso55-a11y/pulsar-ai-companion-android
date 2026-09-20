@@ -35,16 +35,26 @@ jobs:
           patch -p0 < amber-full.patch
           python3 - <<'PY'
           from pathlib import Path
+
           p=Path("AMBER-Android/app/src/main/java/com/amber/assistant/OnDeviceLlm.java")
           s=p.read_text()
           if "import com.google.ai.edge.litertlm.Backend;" not in s:
               s=s.replace("import com.google.ai.edge.litertlm.EngineConfig;","import com.google.ai.edge.litertlm.EngineConfig;\nimport com.google.ai.edge.litertlm.Backend;")
           s=s.replace("EngineConfig cfg=new EngineConfig(path);","Backend cpu=new Backend.CPU(null, null);\n        EngineConfig cfg=new EngineConfig(path, cpu, cpu, null, null, null, null);")
           p.write_text(s)
+
+          p=Path("AMBER-Android/app/src/main/java/com/amber/assistant/VoiceIdentityManager.java")
+          s=p.read_text()
+          old='private String toJson(double[]f){JSONArray a=new JSONArray();for(double v:f)a.put(v);return a.toString();}'
+          new='private String toJson(double[]f){try{JSONArray a=new JSONArray();for(double v:f)a.put(Double.isFinite(v)?v:0.0);return a.toString();}catch(Exception e){return "[]";}}'
+          if old in s:
+              s=s.replace(old,new)
+          p.write_text(s)
           PY
           test -f AMBER-Android/app/build.gradle
           grep -q "versionName '2.0.0-full'" AMBER-Android/app/build.gradle
           grep -q "new EngineConfig(path, cpu, cpu, null, null, null, null)" AMBER-Android/app/src/main/java/com/amber/assistant/OnDeviceLlm.java
+          grep -q 'Double.isFinite(v)' AMBER-Android/app/src/main/java/com/amber/assistant/VoiceIdentityManager.java
           test "$(find AMBER-Android/app/src/main/java -name '*.java' | wc -l)" -ge 38
 
       - name: Set up Java 21
